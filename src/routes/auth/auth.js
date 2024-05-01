@@ -26,7 +26,7 @@ authRouter.post("/signup", async (req, res) => {
   try {
     const { error } = validateUserNumber(req.body);
     if (error) {
-      res.status(400).send(error.details[0].message);
+      res.status(400).json(formatError(error.details[0].message));
       return;
     }
     const { phone, email } = req.body;

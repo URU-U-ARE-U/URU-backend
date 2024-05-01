@@ -22,7 +22,7 @@ studentRouter.post("/student", validTokenUserDetail, async (req, res) => {
     const user = await UserDetails.findById(req.user);
 
     // Ensures the authenticated user has the "Student" tag
-    if (!user || user.tag !== "Student") {
+    if (!user || user.role !== "Student") {
       return res
         .status(403)
         .json(formatError("Access forbidden for this user"));

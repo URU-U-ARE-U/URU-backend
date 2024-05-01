@@ -1,17 +1,13 @@
 import { Admin, validateAdmin } from "../models/userModels/admin.js";
 import bcrypt from "bcrypt";
 import { formatError } from "../utils/response.js";
+import jwt from "jsonwebtoken";
 
 async function validateAdminRegisterInput(req, res, next) {
   try {
     const { error } = validateAdmin(req.body);
     if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
-
-    const userName = await Admin.findOne({ userName: req.body.userName });
-    if (userName) {
-      return res.status(400).json(formatError("Choose another UserName!!!"));
+      return res.status(400).json(formatError(error.details[0].message));
     }
 
     const { adminCode } = req.body;

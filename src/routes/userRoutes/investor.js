@@ -9,7 +9,7 @@ import { formatResponse } from "../../utils/response.js";
 
 const investorRouter = express.Router();
 
-authRouter.use((err, req, res, next) => {
+investorRouter.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json(formatError("Internal Server Error"));
 });
@@ -23,7 +23,7 @@ investorRouter.post("/investor", validTokenUserDetail, async (req, res) => {
     }
     const user = await UserDetails.findById(req.user);
     // Ensures the authenticated user has the "Investor" tag
-    if (!user || user.tag !== "Investor") {
+    if (!user || user.role !== "Investor") {
       return res
         .status(403)
         .json({ message: "Access forbidden for this user" });

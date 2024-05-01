@@ -28,7 +28,7 @@ wantrepreneurRouter.post(
 
       const user = await UserDetails.findById(req.user);
       // Ensures the authenticated user has the "Wantrepreneur" tag
-      if (!user || user.tag !== "Wantrepreneur") {
+      if (!user || user.role !== "Wantrepreneur") {
         return res
           .status(403)
           .json(formatError("Access forbidden for this user"));

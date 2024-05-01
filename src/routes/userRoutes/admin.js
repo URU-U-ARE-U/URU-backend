@@ -6,7 +6,7 @@ import {
   validTokenAdmin,
 } from "../../middleware/admin.js";
 import { validTokenUserNumber } from "../../middleware/auth.js";
-import { UserNumber } from "../../models/auth/userNumber.js";
+import jwt from "jsonwebtoken";
 
 const adminRouter = express.Router();
 
@@ -22,14 +22,21 @@ adminRouter.post(
   async (req, res) => {
     const userNumberId = req.user;
     try {
-      const existingAdmin = await Admin.find({ userNumberId: userNumberId });
+      const { userName } = req.body;
+
+      const existingUserName = await Admin.findOne({
+        userName: userName,
+      });
+      if (existingUserName) {
+        return res.status(400).json(formatError("Choose another UserName!!!"));
+      }
+      const existingAdmin = await Admin.findOne({ userNumberId: userNumberId });
       if (existingAdmin) {
         return res
           .status(400)
           .json(formatResponse(null, "Admin Already Exists"));
       }
 
-      const { userName } = req.body;
       const admin = new Admin({
         userName: userName,
         userNumberId: userNumberId,
@@ -46,44 +53,26 @@ adminRouter.post(
   }
 );
 
-authRouter.post("/signin", validTokenAdmin, async (req, res) => {
-  try {
-    const { userName, adminCode } = req.body;
+adminRouter.post(
+  "/admin/signin",
+  validateAdminRegisterInput,
+  validTokenUserNumber,
+  async (req, res) => {
+    try {
+      const { userName } = req.body;
 
-    const validNumber = isValidIndianPhoneNumber(phone);
+      const admin = await Admin.findOne({ userName: userName });
+      if (!admin) {
+        return res.status(404).json(formatError("Admin Was Not Found"));
+      }
+      const token = jwt.sign({ id: admin._id, role: "admin" }, "passwordKey");
 
-    if (!validNumber) {
-      return res
-        .status(400)
-        .json(
-          formatError(
-            "The phone number you entered is invalid. Please enter a valid Indian phone number (starting with +91 and 10 digits long)."
-          )
-        );
+      res.status(200).json(formatResponse(token, "Logged In Successfull"));
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(formatError(error.message));
     }
-
-    const user = await UserNumber.findOne({ phone });
-    if (!user) {
-      return res.status(404).json(formatError("Phone number not found"));
-    }
-
-    if (user.otpExpiry && user.otpExpiry < Date.now()) {
-      user.otp = null; // Clear expired OTP
-    }
-
-    const otp = generateOtp();
-
-    user.otp = otp;
-    user.otpExpiry = generateOtpExiry(); // Expires in 30 minutes
-    await user.save();
-
-    sendOtpViaTwilio(user.phone, user.otp);
-
-    res.status(200).json(formatResponse(null, "OTP sent successfully"));
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(formatError(error.message));
   }
-});
+);
 
 export { adminRouter };
