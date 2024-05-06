@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 import Joi from "joi";
 
-const discriminatorOptions = {
-  discriminatorKey: "kind",
-};
-
 const Diversity = [
   "Male",
   "Female",
@@ -32,59 +28,67 @@ const Zodiac = [
 
 const Roles = ["Student", "Wantrepreneur", "Investor"];
 
-const userDetailSchema = new mongoose.Schema(
-  {
-    role: {
-      type: String,
-      required: true,
-      enum: Roles,
-    },
-    profilePic: {
-      type: String,
-      required: true,
-    },
-    phoneNumberId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserNumber",
-    },
-    fullName: {
-      type: String,
-      required: true,
-      maxlength: 100,
-    },
-    dob: {
-      type: Date,
-      required: true,
-    },
-    philosophy: {
-      type: String,
-      required: true,
-      maxlength: 150,
-    },
-    loveAboutYourSelf: {
-      type: String,
-      required: true,
-      maxlength: 150,
-    },
-    diversity: {
-      type: String,
-      required: true,
-      enum: Diversity,
-    },
-    zodiac: {
-      type: String,
-      required: true,
-      enum: Zodiac,
-    },
-
-    Native: {
-      type: String,
-      required: true,
-      maxlength: 150,
+const userDetailSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    required: true,
+    enum: Roles,
+  },
+  profilePic: {
+    type: String,
+    required: true,
+  },
+  phoneNumberId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserNumber",
+  },
+  phoneNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function (v) {
+        return /^\+91\d{10}$/.test(v);
+      },
+      message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
-  discriminatorOptions
-);
+  fullName: {
+    type: String,
+    required: true,
+    maxlength: 100,
+  },
+  dob: {
+    type: Date,
+    required: true,
+  },
+  philosophy: {
+    type: String,
+    required: true,
+    maxlength: 150,
+  },
+  loveAboutYourSelf: {
+    type: String,
+    required: true,
+    maxlength: 150,
+  },
+  diversity: {
+    type: String,
+    required: true,
+    enum: Diversity,
+  },
+  zodiac: {
+    type: String,
+    required: true,
+    enum: Zodiac,
+  },
+
+  Native: {
+    type: String,
+    required: true,
+    maxlength: 150,
+  },
+});
 
 const UserDetails = mongoose.model("UserDetails", userDetailSchema);
 

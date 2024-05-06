@@ -8,6 +8,8 @@ import {
 import { validTokenUserNumber } from "../../middleware/auth.js";
 import jwt from "jsonwebtoken";
 
+// levels of admin login
+
 const adminRouter = express.Router();
 
 adminRouter.get("/admin/username", validTokenUserNumber, async (req, res) => {

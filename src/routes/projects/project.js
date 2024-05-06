@@ -1,6 +1,9 @@
 import express from "express";
 import { Projects } from "../../models/projects/projectsModel.js";
-import { ProjectRequest } from "../../models/projects/projectProgress.js";
+import {
+  ProjectRequest,
+  validateProjectProgressMessage,
+} from "../../models/projects/projectProgress.js";
 import { validTokenUserDetail } from "../../middleware/auth.js";
 import { formatResponse, formatError } from "../../utils/response.js";
 import { validateProjectInput } from "../../middleware/project.js";
@@ -85,9 +88,14 @@ projectRouter.post(
   async (req, res) => {
     const userId = req.user;
     try {
-      const { projectId } = req.body;
-      if (!projectId)
-        return res.status(400).json(formatError("Enter a Valid Project Id"));
+      const { error } = validateProjectProgressMessage(req.body);
+      if (error) {
+        return res.status(400).json(formatError(error.details[0].message));
+      }
+      const { projectId, message } = req.body;
+      // const { projectId } = req.body;
+      // if (!projectId)
+      //   return res.status(400).json(formatError("Enter a Valid Project Id"));
 
       // if (req.role === "Student") {
       //   return res
@@ -102,7 +110,7 @@ projectRouter.post(
           .json(formatError("Projects with this project Id dosen't exists "));
       const requestExists = await ProjectRequest.findOne({
         userId: userId,
-        projectId: projectId,
+        projectId,
       });
 
       if (requestExists)
@@ -114,6 +122,7 @@ projectRouter.post(
         _id: projectId,
         funded: userId,
       });
+
       if (hasFunded) {
         return res
           .status(400)
@@ -122,8 +131,9 @@ projectRouter.post(
 
       const newProjectRequest = new ProjectRequest({
         userId,
-        projectId,
+        projectId: projectId,
         status: "inprogress",
+        message: message,
       });
 
       await newProjectRequest.save();
@@ -198,17 +208,106 @@ projectRouter.get(
   async (req, res) => {
     try {
       const { projectId } = req.params;
-      const role = req.role; // Assuming role is retrieved from auth middleware
+      const role = req.role;
 
       const projectDetails = await Projects.findById(projectId);
 
-      const isAllowed = role !== "Student"; // Check if user is not a student
+      const isAllowed = role !== "Student";
 
       res
         .status(200)
         .json(formatResponse({ allowed: isAllowed, project: projectDetails }));
     } catch (error) {
       res.status(500).json(formatError("Internal Server Error"));
+    }
+  }
+);
+// delete request
+
+projectRouter.delete(
+  "/user/project-requests/delete/:requestId",
+  validTokenUserDetail,
+  async (req, res) => {
+    try {
+      // Find the project request by ID
+      const projectRequest = await ProjectRequest.findOne({
+        userId: req.user,
+        _id: req.params.requestId,
+      });
+
+      if (!projectRequest)
+        return res.status(404).json(formatError("Project request not found"));
+
+      await ProjectRequest.findByIdAndDelete(req.params.requestId);
+
+      res
+        .status(200)
+        .json(formatResponse(null, "Project request deleted successfully"));
+    } catch (error) {
+      res.status(500).json(formatError(error.message));
+    }
+  }
+);
+
+// reports in admin for projects
+projectRouter.post(
+  "/report/:projectId",
+  validTokenUserDetail,
+  async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const userId = req.user;
+
+      const project = await Projects.findById(projectId);
+
+      if (!project) {
+        return res.status(404).json(formatError("Project not found"));
+      }
+      if (project.reportedBy.includes(userId)) {
+        return res
+          .status(400)
+          .json(formatError("You have already reported this project"));
+      }
+
+      project.reportedBy.push(userId);
+      project.reportCount++;
+
+      await project.save();
+
+      res
+        .status(200)
+        .json(formatResponse(null, "Project reported successfully"));
+    } catch (error) {
+      res.status(500).json(formatError(error.message));
+    }
+  }
+);
+
+// delete project
+projectRouter.delete(
+  "/user/projects/delete/:projectId",
+  validTokenUserDetail,
+  async (req, res) => {
+    try {
+      const project = await Projects.findOne({
+        userId: req.user,
+        _id: req.params.projectId,
+      });
+
+      if (!project)
+        return res.status(404).json(formatError("Project not found"));
+
+      await Projects.findByIdAndDelete(req.params.projectId);
+
+      await ProjectRequest.deleteMany({
+        projectId: req.params.projectId,
+      });
+
+      res
+        .status(200)
+        .json(formatResponse(null, "Project deleted successfully"));
+    } catch (error) {
+      res.status(500).json(formatError(error.message));
     }
   }
 );
@@ -229,13 +328,28 @@ projectRouter.put(
         return res.status(404).json(formatError("Project request not found"));
       }
 
+      const project = await Projects.findById(projectRequest.projectId);
+      if (!project) {
+        // Handle case where project is not found
+        return res.status(404).json(formatError("Project not found"));
+      }
+
+      // Check if the userId was added to the funded array
+      const isUserAdded = project.funded.includes(projectRequest.userId);
+
+      if (isUserAdded) {
+        return res
+          .status(200)
+          .json(formatError("User already funded the project"));
+      }
+
       const updatedRequest = await ProjectRequest.findByIdAndUpdate(
         requestId,
         { status: "approved" },
         { new: true }
       );
 
-      const project = await Projects.findByIdAndUpdate(
+      await Projects.findByIdAndUpdate(
         updatedRequest.projectId,
         {
           $addToSet: { funded: updatedRequest.userId },
@@ -243,23 +357,6 @@ projectRouter.put(
         { new: true }
       );
 
-      if (!project) {
-        // Handle case where project is not found
-        return res.status(404).json({ error: "Project not found" });
-      }
-
-      // // Check if the userId was added to the funded array
-      // const isUserAdded = project.funded.includes(updatedRequest.userId);
-
-      // if (isUserAdded) {
-      //   res
-      //     .status(200)
-      //     .json(formatResponse(null, "User already funded the project"));
-      // } else {
-      //   res
-      //     .status(200)
-      //     .json(formatResponse(null, "User funded the project successfully"));
-      // }
       // const io = getIo();
 
       // // Emit a targeted Socket.io event to the project publisher
@@ -315,116 +412,149 @@ projectRouter.put(
     }
   }
 );
-// .populate({
-//   path: "projectId",
-//   select: "title sdg trl investmentRange description images",
-// })
+
+//  function to fetch project requests based on status
+const fetchProjectRequests = async (req, res, status) => {
+  try {
+    if (req.role !== "admin")
+      return res.status(403).json(formatError("Unauthorized"));
+
+    const projectRequests = await ProjectRequest.aggregate([
+      {
+        $match: { status: status },
+      },
+      {
+        $lookup: {
+          from: "userdetails",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "projects",
+          localField: "projectId",
+          foreignField: "_id",
+          as: "projectDetails",
+        },
+      },
+      {
+        $addFields: {
+          user: { $arrayElemAt: ["$userDetails", 0] },
+          project: { $arrayElemAt: ["$projectDetails", 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          user: {
+            _id: 1,
+            fullName: 1,
+            dob: 1,
+            role: 1,
+            phoneNumber: 1,
+          },
+          project: {
+            _id: 1,
+            title: 1,
+            sdg: 1,
+            trl: 1,
+            investmentRange: 1,
+            description: 1,
+          },
+          status: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(projectRequests);
+  } catch (error) {
+    res.status(500).json(formatError(error.message));
+  }
+};
+
+// Route to fetch inprogress project requests
+projectRouter.get(
+  "/admin/project-requests-inprogress",
+  validTokenAdmin,
+  async (req, res) => {
+    await fetchProjectRequests(req, res, "inprogress");
+  }
+);
+
+// Route to fetch approved project requests
+projectRouter.get(
+  "/admin/project-requests-approved",
+  validTokenAdmin,
+  async (req, res) => {
+    await fetchProjectRequests(req, res, "approved");
+  }
+);
+
+// Route to fetch declined project requests
+projectRouter.get(
+  "/admin/project-requests-declined",
+  validTokenAdmin,
+  async (req, res) => {
+    await fetchProjectRequests(req, res, "declined");
+  }
+);
 
 projectRouter.get(
-  "/admin/project-requests",
+  "/admin/projects-with-reports",
+  validTokenAdmin,
+  async (req, res) => {
+    try {
+      // Check if the requester is an admin
+      if (req.role !== "admin")
+        return res.status(403).json(formatError("Unauthorized"));
+
+      // Aggregate to get projects with more than 2 reports
+      const projectsWithReports = await Projects.aggregate([
+        {
+          $match: {
+            reportCount: { $exists: true, $gte: 2 },
+          },
+        },
+        {
+          $sort: { reportCount: -1 }, // Sort in descending order based on reports count
+        },
+      ]);
+
+      // Send the response
+      res.status(200).json(projectsWithReports);
+    } catch (error) {
+      // Handle errors
+      res.status(500).json(formatError(error.message));
+    }
+  }
+);
+
+projectRouter.delete(
+  "/admin/project/:projectId",
   validTokenAdmin,
   async (req, res) => {
     try {
       if (req.role !== "admin")
         return res.status(403).json(formatError("Unauthorized"));
 
-      const projectRequests = await ProjectRequest.find()
-        .populate({
-          path: "projectId",
-          select: "title sdg trl investmentRange description",
-        })
-        .populate({
-          path: "userId",
-          select: "fullName dob role phoneNumberId",
-        })
-        .exec(); // Execute population query
+      const project = await Projects.findById(req.params.projectId);
 
-      // Extract userIds to fetch UserNumbers
-      const userIds = projectRequests.map(
-        (request) => request.userId.phoneNumberId
-      );
+      if (!project)
+        return res.status(404).json(formatError("Project not found"));
 
-      // Fetch UserNumbers for the userIds
-      const userNumbers = await UserNumber.find({ _id: { $in: userIds } });
-
-      // Create a map of userId to phoneNumber for easy access
-      const userIdToPhoneMap = {};
-      userNumbers.forEach((userNumber) => {
-        userIdToPhoneMap[userNumber._id.toString()] = userNumber.phone;
+      await Projects.findByIdAndDelete(req.params.projectId);
+      await ProjectRequest.deleteMany({
+        projectId: req.params.projectId,
       });
-
-      // Add phoneNumber property to each projectRequests object
-      projectRequests.forEach((request) => {
-        const phoneNumber = userIdToPhoneMap[request.userId.phoneNumberId];
-        if (phoneNumber) {
-          // Add phoneNumber property to projectRequests object
-          request.phoneNumber = phoneNumber;
-        }
-      });
-
-      res.status(200).json(projectRequests);
+      res
+        .status(200)
+        .json(formatResponse(null, "Project deleted successfully"));
     } catch (error) {
       res.status(500).json(formatError(error.message));
     }
   }
 );
-
-projectRouter.get(
-  "/admi/project-requests",
-  validTokenAdmin,
-  async (req, res) => {
-    try {
-      if (req.role !== "admin")
-        return res.status(403).json(formatError("Unauthorized"));
-
-      const projectRequests = await ProjectRequest.find()
-        .populate({
-          path: "projectId",
-          select: "title sdg trl investmentRange description ",
-        })
-        .populate({
-          path: "userId",
-          select: "fullName dob role phoneNumberId",
-        })
-        .exec(); // Execute population query
-
-      const userIds = projectRequests.map(
-        (request) => request.userId.phoneNumberId
-      );
-
-      const userNumbers = await UserNumber.find({ _id: { $in: userIds } });
-      console.log(userNumbers);
-      const userIdToPhoneMap = {};
-      userNumbers.forEach((userNumber) => {
-        userIdToPhoneMap[userNumber._id.toString()] = userNumber.phone;
-      });
-      projectRequests.forEach(async (request) => {
-        const phoneNumber = await userIdToPhoneMap[
-          request.userId.phoneNumberId
-        ];
-        if (phoneNumber) {
-          // Add phone number directly to the projectRequests object
-          request.userId.phone = phoneNumber;
-        }
-      });
-
-      // projectRequests.forEach((request) => {
-      //   const userNumber = userNumbers.find((num) =>
-      //     num._id.equals(request.userId.phoneNumberId)
-      //   );
-      //   if (userNumber) {
-      //     request.phone = userNumber.phone;
-      //     console.log(request.phone);
-      //   }
-      // });
-
-      res.status(200).json(projectRequests);
-    } catch (error) {
-      res.status(500).json(formatError(error.message));
-    }
-  }
-);
-
-//delete
 
 export default projectRouter;

@@ -14,6 +14,8 @@ import {
   isValidIndianPhoneNumber,
 } from "../../utils/authGenerators.js";
 
+import { UserDetails } from "../../models/userModels/userDetails.js";
+
 const authRouter = express.Router();
 
 authRouter.use((err, req, res, next) => {
@@ -143,6 +145,23 @@ authRouter.post("/verify", async (req, res) => {
     await user.save();
   } catch (error) {
     console.error(error);
+    res.status(500).json(formatError(error.message));
+  }
+});
+
+authRouter.get("/userdetail/token", validTokenUserNumber, async (req, res) => {
+  try {
+    const userdetail = await UserDetails.findOne({ phoneNumberId: req.user });
+    if (!userdetail) {
+      return res.status(400).json(formatError("No UserDetails Exists"));
+    }
+    const token = jwt.sign(
+      { id: userdetail._id, role: userdetail.role },
+      "passwordKey"
+    );
+
+    res.status(200).json(formatResponse(token, "User details Token"));
+  } catch (error) {
     res.status(500).json(formatError(error.message));
   }
 });

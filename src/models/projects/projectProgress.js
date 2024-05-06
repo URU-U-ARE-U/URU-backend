@@ -1,3 +1,4 @@
+import Joi from "joi";
 import mongoose from "mongoose";
 
 const projectRequestSchema = new mongoose.Schema({
@@ -8,6 +9,11 @@ const projectRequestSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Projects",
+  },
+  message: {
+    type: String,
+    required: true,
+    maxlength: 100,
   },
   status: {
     type: String,
@@ -20,6 +26,18 @@ const projectRequestSchema = new mongoose.Schema({
 //   const update = this.getUpdate();
 // });
 
+function validateObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+
+function validateProjectProgressMessage(message) {
+  const schema = Joi.object({
+    projectId: Joi.string().custom(validateObjectId, "MongoDB ObjectId"),
+    message: Joi.string().required().max(100),
+  });
+  return schema.validate(message);
+}
+
 const ProjectRequest = mongoose.model("ProjectRequest", projectRequestSchema);
 
-export { ProjectRequest };
+export { ProjectRequest, validateProjectProgressMessage };

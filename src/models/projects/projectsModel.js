@@ -120,6 +120,16 @@ const projectSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref: "UserDetails",
   },
+  reportCount: {
+    type: Number,
+    default: 0,
+  },
+  reportedBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserDetails",
+    },
+  ],
 });
 
 // projectSchema.pre("save", function (next) {
@@ -160,7 +170,7 @@ function validateProject(project) {
     images: Joi.array().items(Joi.string()),
     pdf: Joi.string(),
   });
-  return schema.validate(project, { abortEarly: false });
+  return schema.validate(project, { abortEarly: false }); // do
 }
 
 const Projects = mongoose.model("Projects", projectSchema);

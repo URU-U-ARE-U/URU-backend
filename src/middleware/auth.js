@@ -18,6 +18,7 @@ const validTokenUserNumber = async (req, res, next) => {
     if (!userNumber) return res.status(401).json({ message: "Invalid User" });
     req.user = verifyToken.id;
     req.token = token;
+    req.phone = userNumber.phone;
     next();
   } catch (e) {
     res.status(500).json({

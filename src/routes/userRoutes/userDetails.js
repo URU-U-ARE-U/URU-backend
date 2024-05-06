@@ -44,6 +44,7 @@ userDetailsRouter.post(
         zodiac: req.body.zodiac,
         profilePhoto: req.body.profilePhoto,
         Native: req.body.Native,
+        phoneNumber: req.phone,
       });
 
       const user = await userDetails.save();
