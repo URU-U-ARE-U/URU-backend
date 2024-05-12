@@ -17,7 +17,7 @@ const projectRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["approved", "declined", "inprogress"],
+    enum: ["approved", "declined", "inprogress", "FundingInProgress", "Funded"],
     default: "inprogress",
   },
 });

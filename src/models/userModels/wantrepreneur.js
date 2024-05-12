@@ -18,7 +18,7 @@ const wantrepreneurSchema = new mongoose.Schema({
     required: true,
     maxlength: 50,
   },
-  yearsExperience: {
+  yearsOfExperience: {
     type: Number,
     required: true,
     max: 100,
@@ -39,16 +39,12 @@ const wantrepreneurSchema = new mongoose.Schema({
     enum: MaritalStatus,
   },
 
-  spouseName: {
+  spouseNameandOccupation: {
     type: String,
     required: true,
-    maxlength: 50,
+    maxlength: 150,
   },
-  spouseOccupation: {
-    type: String,
-    required: true,
-    maxlength: 100,
-  },
+
   aadharId: {
     type: String,
     required: true,
@@ -59,14 +55,13 @@ function validateWantrepreneur(wantrepreneur) {
   const schema = Joi.object({
     currentOrganization: Joi.string().required().max(50),
     currentDesignation: Joi.string().required().max(50),
-    yearsExperience: Joi.number().required().integer().min(0).max(100),
+    yearsOfExperience: Joi.number().required().integer().min(0).max(100),
     educationalQualification: Joi.string().required().max(100),
     collegeStudied: Joi.string().required().max(100),
     maritalStatus: Joi.string()
       .valid(...MaritalStatus)
       .required(),
-    spouseName: Joi.string().required().max(50),
-    spouseOccupation: Joi.string().required().max(100),
+    spouseNameandOccupation: Joi.string().required().max(150),
     aadharId: Joi.string().required(),
   });
   return schema.validate(wantrepreneur);

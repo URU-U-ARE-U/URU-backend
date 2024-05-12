@@ -7,6 +7,7 @@ import { investorRouter } from "./src/routes/userRoutes/investor.js";
 import { wantrepreneurRouter } from "./src/routes/userRoutes/wantrepreneur.js";
 import projectRouter from "./src/routes/projects/project.js";
 import { adminRouter } from "./src/routes/userRoutes/admin.js";
+import communityRouter from "./src/routes/userRoutes/community.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(userDetailsRouter); // User details routes
 app.use(studentRouter); // Student routes
 app.use(investorRouter); // Investor routes
 app.use(wantrepreneurRouter); // Wantrepreneur routes
+app.use(communityRouter);
 app.use(projectRouter); // Project routes
 app.use(adminRouter);
 

@@ -39,12 +39,11 @@ wantrepreneurRouter.post(
         userId: req.user,
         currentOrganization: req.body.currentOrganization,
         currentDesignation: req.body.currentDesignation,
-        yearsExperience: req.body.yearsExperience,
+        yearsOfExperience: req.body.yearsOfExperience,
         educationalQualification: req.body.educationalQualification,
         collegeStudied: req.body.collegeStudied,
         maritalStatus: req.body.maritalStatus,
-        spouseName: req.body.spouseName,
-        spouseOccupation: req.body.spouseOccupation,
+        spouseNameandOccupation: req.body.spouseNameandOccupation,
         aadharId: req.body.aadharId,
       });
 

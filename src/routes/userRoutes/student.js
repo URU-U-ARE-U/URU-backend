@@ -35,12 +35,9 @@ studentRouter.post("/student", validTokenUserDetail, async (req, res) => {
       degree: req.body.degree,
       batch: req.body.batch,
       collegeLocation: req.body.collegeLocation,
-      fatherName: req.body.fatherName,
-      fatherOccupation: req.body.fatherOccupation,
-      motherName: req.body.motherName,
-      motherOccupation: req.body.motherOccupation,
-      siblingName: req.body.siblingName,
-      siblingOccupation: req.body.siblingOccupation,
+      fatherNameandOccupation: req.body.fatherNameandOccupation,
+      motherNameandOccupation: req.body.motherNameandOccupation,
+      siblingNameandOccupation: req.body.siblingNameandOccupation,
       collegeId: req.body.collegeId,
     });
 

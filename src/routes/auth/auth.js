@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import { formatError, formatResponse } from "../../utils/response.js";
 import { validTokenUserNumber } from "../../middleware/auth.js";
 import {
@@ -23,7 +24,7 @@ authRouter.use((err, req, res, next) => {
   res.status(500).json(formatError("Internal Server Error"));
 });
 
-// Create UserNumber Endpoint
+// Create UserNumber
 authRouter.post("/signup", async (req, res) => {
   try {
     const { error } = validateUserNumber(req.body);

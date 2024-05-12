@@ -6,6 +6,7 @@ import {
 } from "../../models/userModels/userDetails.js";
 import jwt from "jsonwebtoken";
 import { formatError, formatResponse } from "../../utils/response.js";
+import Subscription from "../../models/Subscriptions/subscription.js";
 
 const userDetailsRouter = express.Router();
 
@@ -30,8 +31,6 @@ userDetailsRouter.post(
       if (existingUser) {
         return res.status(400).json(formatError("User details already exist"));
       }
-      // const userNumber = await UserNumber.findById(userId);
-
       const userDetails = new UserDetails({
         profilePic: req.body.profilePic,
         role: req.body.role,
@@ -45,11 +44,22 @@ userDetailsRouter.post(
         profilePhoto: req.body.profilePhoto,
         Native: req.body.Native,
         phoneNumber: req.phone,
+        description: req.body.description,
+        links: req.body.links,
+        subscription: null,
       });
 
       const user = await userDetails.save();
+      const subscription = new Subscription({
+        userId: user._id,
+        tier: "Free",
+      });
+      await subscription.save();
+      await UserDetails.findByIdAndUpdate(user._id, {
+        subscription: subscription._id,
+      });
       const token = jwt.sign(
-        { id: user._id, role: user.role }, //, username: userNumber.userName
+        { id: user._id, role: user.role, subscriptionId: subscription._id },
         "passwordKey"
       );
 

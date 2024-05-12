@@ -11,19 +11,20 @@ const Diversity = [
   "ForeignReturn",
 ];
 
+// eng
 const Zodiac = [
-  "Mesham",
-  "Rishabam",
-  "Mithunam",
-  "Kadagam",
-  "Simmam",
-  "Kanni",
-  "Thulam",
-  "Viruchigam",
-  "Dhanusu",
-  "Magaram",
-  "Kumbam",
-  "Meenam",
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
 ];
 
 const Roles = ["Student", "Wantrepreneur", "Investor"];
@@ -41,6 +42,7 @@ const userDetailSchema = new mongoose.Schema({
   phoneNumberId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "UserNumber",
+    required: true,
   },
   phoneNumber: {
     type: String,
@@ -53,6 +55,7 @@ const userDetailSchema = new mongoose.Schema({
       message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
+  //min 3
   fullName: {
     type: String,
     required: true,
@@ -62,11 +65,13 @@ const userDetailSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  //min
   philosophy: {
     type: String,
     required: true,
     maxlength: 150,
   },
+  //min
   loveAboutYourSelf: {
     type: String,
     required: true,
@@ -82,11 +87,24 @@ const userDetailSchema = new mongoose.Schema({
     required: true,
     enum: Zodiac,
   },
+  description: {
+    type: String,
+    required: true,
+    maxlength: 200,
+  },
+  links: {
+    type: String,
+    required: true,
+  },
 
   Native: {
     type: String,
     required: true,
     maxlength: 150,
+  },
+  subscription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subscription",
   },
 });
 
@@ -97,6 +115,8 @@ function validateUserDetails(userDetail) {
     role: Joi.string()
       .required()
       .valid(...Roles),
+    description: Joi.string().required().max(200),
+    links: Joi.string().required(),
     profilePic: Joi.string().required(),
     fullName: Joi.string().required().max(100),
     dob: Joi.date().iso().required(),

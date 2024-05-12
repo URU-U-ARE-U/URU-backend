@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { Projects } from "../../models/projects/projectsModel.js";
 import {
   ProjectRequest,
@@ -35,6 +36,12 @@ projectRouter.post(
   validateProjectInput,
   async (req, res) => {
     try {
+      const role = req.role;
+      if (role === "Investor") {
+        return res
+          .status(400)
+          .json(formatError("Investor Cannot Create Project"));
+      }
       const project = new Projects({
         userId: req.user,
         ...req.body,
@@ -93,21 +100,24 @@ projectRouter.post(
         return res.status(400).json(formatError(error.details[0].message));
       }
       const { projectId, message } = req.body;
-      // const { projectId } = req.body;
-      // if (!projectId)
-      //   return res.status(400).json(formatError("Enter a Valid Project Id"));
 
-      // if (req.role === "Student") {
-      //   return res
-      //     .status(403)
-      //     .json(formatError("Access forbidden for this user"));
-      // }
+      if (req.role === "Student") {
+        return res
+          .status(403)
+          .json(formatError("Access forbidden for this user"));
+      }
 
       const projectExits = await Projects.findById(projectId);
-      if (!projectExits)
+      if (!projectExits) {
         return res
           .status(404)
           .json(formatError("Projects with this project Id dosen't exists "));
+      }
+      // if (projectExits.userId == userId) {
+      //   return res
+      //     .status(400)
+      //     .json(formatError("You can't express interest in your own project"));
+      // }
       const requestExists = await ProjectRequest.findOne({
         userId: userId,
         projectId,
@@ -170,30 +180,36 @@ projectRouter.get(
 // Get projects with request status for the authenticated user
 projectRouter.get("/projects", validTokenUserDetail, async (req, res) => {
   try {
-    const allProjects = await Projects.find();
+    const userId = new mongoose.Types.ObjectId(req.user);
 
-    const userRequests = await ProjectRequest.find({
-      userId: req.user,
-    }).populate({
-      path: "projectId",
-      select: "title sdg trl investmentRange description images",
-    });
-
-    const projectRequestMap = {};
-    userRequests.forEach((request) => {
-      projectRequestMap[request.projectId._id.toString()] = request.status;
-    });
-
-    const projectsWithRequests = allProjects.map((project) => ({
-      _id: project._id,
-      name: project.title,
-      description: project.description,
-      sdg: project.sdg,
-      trl: project.trl,
-      investmentRange: project.investmentRange,
-      images: project.images,
-      status: projectRequestMap[project._id.toString()] || "NONE",
-    }));
+    const projectsWithRequests = await ProjectRequest.aggregate([
+      {
+        $match: { userId: userId },
+      },
+      {
+        $lookup: {
+          from: "projects",
+          localField: "projectId",
+          foreignField: "_id",
+          as: "project",
+        },
+      },
+      {
+        $unwind: "$project",
+      },
+      {
+        $project: {
+          _id: "$project._id",
+          name: "$project.title",
+          description: "$project.description",
+          sdg: "$project.sdg",
+          trl: "$project.trl",
+          investmentRange: "$project.investmentRange",
+          images: "$project.images",
+          status: "$status",
+        },
+      },
+    ]);
 
     res.status(200).json(formatResponse(projectsWithRequests));
   } catch (error) {
@@ -249,7 +265,36 @@ projectRouter.delete(
   }
 );
 
-// reports in admin for projects
+// delete project
+projectRouter.delete(
+  "/user/projects/delete/:projectId",
+  validTokenUserDetail,
+  async (req, res) => {
+    try {
+      const project = await Projects.findOne({
+        userId: req.user,
+        _id: req.params.projectId,
+      });
+
+      if (!project)
+        return res.status(404).json(formatError("Project not found"));
+
+      await Projects.findByIdAndDelete(req.params.projectId);
+
+      await ProjectRequest.deleteMany({
+        projectId: req.params.projectId,
+      });
+
+      res
+        .status(200)
+        .json(formatResponse(null, "Project deleted successfully"));
+    } catch (error) {
+      res.status(500).json(formatError(error.message));
+    }
+  }
+);
+
+// reports the projects
 projectRouter.post(
   "/report/:projectId",
   validTokenUserDetail,
@@ -277,35 +322,6 @@ projectRouter.post(
       res
         .status(200)
         .json(formatResponse(null, "Project reported successfully"));
-    } catch (error) {
-      res.status(500).json(formatError(error.message));
-    }
-  }
-);
-
-// delete project
-projectRouter.delete(
-  "/user/projects/delete/:projectId",
-  validTokenUserDetail,
-  async (req, res) => {
-    try {
-      const project = await Projects.findOne({
-        userId: req.user,
-        _id: req.params.projectId,
-      });
-
-      if (!project)
-        return res.status(404).json(formatError("Project not found"));
-
-      await Projects.findByIdAndDelete(req.params.projectId);
-
-      await ProjectRequest.deleteMany({
-        projectId: req.params.projectId,
-      });
-
-      res
-        .status(200)
-        .json(formatResponse(null, "Project deleted successfully"));
     } catch (error) {
       res.status(500).json(formatError(error.message));
     }

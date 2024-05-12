@@ -24,13 +24,7 @@ const userSchema = new mongoose.Schema({
       message: (props) => `${props.value} is not a valid email address!`,
     },
   },
-  // userName: {
-  //   type: String,
-  //   unique: true,
-  //   minlength: 8,
-  //   maxlength: 16,
-  //   required: true,
-  // },
+
   otp: {
     type: String,
   },
@@ -48,7 +42,6 @@ function validateUserNumber(userNumber) {
       .pattern(/^\+91\d{10}$/)
       .required(),
     email: Joi.string().email().required(),
-    // userName: Joi.string().min(8).max(16).required(),
   });
 
   return schema.validate(userNumber);

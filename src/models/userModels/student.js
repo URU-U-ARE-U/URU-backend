@@ -27,35 +27,30 @@ const studentSchema = new mongoose.Schema({
     required: true,
     maxlength: 200,
   },
-  fatherName: {
+
+  fatherNameandOccupation: {
     type: String,
     required: true,
-    maxlength: 50,
+    maxlength: 200,
   },
-  fatherOccupation: {
+
+  motherNameandOccupation: {
     type: String,
     required: true,
-    maxlength: 100,
+    maxlength: 200,
   },
-  motherName: {
-    type: String,
-    required: true,
-    maxlength: 50,
-  },
-  motherOccupation: {
-    type: String,
-    required: true,
-    maxlength: 100,
-  },
-  siblingName: {
-    type: String,
+
+  siblingNameandOccupation: {
+    type: [
+      {
+        type: String,
+        required: true,
+        maxlength: 200,
+      },
+    ],
     required: true,
   },
-  siblingOccupation: {
-    type: String,
-    required: true,
-    maxlength: 100,
-  },
+
   collegeId: {
     type: String,
     required: true,
@@ -68,12 +63,9 @@ function validateStudent(student) {
     degree: Joi.string().required().max(100),
     batch: Joi.string().required().max(15),
     collegeLocation: Joi.string().required().max(200),
-    fatherName: Joi.string().required().max(50),
-    fatherOccupation: Joi.string().required().max(100),
-    motherName: Joi.string().required().max(50),
-    motherOccupation: Joi.string().required().max(100),
-    siblingName: Joi.string().required(),
-    siblingOccupation: Joi.string().required().max(100),
+    fatherNameandOccupation: Joi.string().required().max(200),
+    motherNameandOccupation: Joi.string().required().max(200),
+    siblingNameandOccupation: Joi.string().required().max(200),
     collegeId: Joi.string().required(),
   });
 
