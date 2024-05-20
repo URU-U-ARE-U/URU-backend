@@ -1,5 +1,5 @@
 import express from "express";
-import { validTokenUserDetail } from "../../middleware/auth.js";
+import { validTokenUserDetail } from "../../middleware/auth.middleware.js";
 import { Student, validateStudent } from "../../models/userModels/student.js";
 import { UserDetails } from "../../models/userModels/userDetails.js";
 import { formatError, formatResponse } from "../../utils/response.js";

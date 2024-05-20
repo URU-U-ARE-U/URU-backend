@@ -61,7 +61,7 @@ const uniqueFeatureSchema = new mongoose.Schema({
 const projectSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "UserDetails",
+    ref: "UserNumber",
   },
   title: {
     type: String,
@@ -118,7 +118,7 @@ const projectSchema = new mongoose.Schema({
   pdf: String,
   funded: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: "UserDetails",
+    ref: "UserNumber",
   },
   reportCount: {
     type: Number,
@@ -127,7 +127,7 @@ const projectSchema = new mongoose.Schema({
   reportedBy: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserDetails",
+      ref: "UserNumber",
     },
   ],
 });

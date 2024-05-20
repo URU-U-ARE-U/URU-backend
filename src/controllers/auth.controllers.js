@@ -1,31 +1,21 @@
-import express from "express";
+import { errorHandler } from "../utils/ErrorHandler.js";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
-import { formatError, formatResponse } from "../../utils/response.js";
-import { validTokenUserNumber } from "../../middleware/auth.js";
+import { formatError, formatResponse } from "../utils/response.js";
 import {
   UserNumber,
   validateUserNumber,
-} from "../../models/auth/userNumber.js";
+  Roles,
+} from "../models/auth/userNumber.js";
 
 import {
   sendOtpViaTwilio,
   generateOtp,
   generateOtpExiry,
   isValidIndianPhoneNumber,
-} from "../../utils/authGenerators.js";
+  generateToken,
+} from "../utils/authGenerators.js";
 
-import { UserDetails } from "../../models/userModels/userDetails.js";
-
-const authRouter = express.Router();
-
-authRouter.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json(formatError("Internal Server Error"));
-});
-
-// Create UserNumber
-authRouter.post("/signup", async (req, res) => {
+const createUserDetails = errorHandler(async (req, res) => {
   try {
     const { error } = validateUserNumber(req.body);
     if (error) {
@@ -57,8 +47,7 @@ authRouter.post("/signup", async (req, res) => {
   }
 });
 
-// Sign In Endpoint
-authRouter.post("/signin", async (req, res) => {
+const LoginUser = errorHandler(async (req, res) => {
   try {
     const { phone } = req.body;
 
@@ -80,13 +69,13 @@ authRouter.post("/signin", async (req, res) => {
     }
 
     if (user.otpExpiry && user.otpExpiry < Date.now()) {
-      user.otp = null; // Clear expired OTP
+      user.otp = null;
     }
 
     const otp = generateOtp();
 
     user.otp = otp;
-    user.otpExpiry = generateOtpExiry(); // Expires in 30 minutes
+    user.otpExpiry = generateOtpExiry();
     await user.save();
 
     sendOtpViaTwilio(user.phone, user.otp);
@@ -98,8 +87,7 @@ authRouter.post("/signin", async (req, res) => {
   }
 });
 
-//Verfication Endpoint
-authRouter.post("/verify", async (req, res) => {
+const verifyUser = errorHandler(async (req, res) => {
   try {
     const { phone, otp } = req.body;
 
@@ -137,7 +125,9 @@ authRouter.post("/verify", async (req, res) => {
       return res.status(401).json(formatError("Incorrect OTP"));
     }
 
-    const token = jwt.sign({ id: user._id }, "passwordKey");
+    const payload = { id: user._id };
+
+    const token = generateToken(payload, process.env.SECRET_KEY);
 
     res.status(200).json(formatResponse(token, "Login successful"));
 
@@ -150,24 +140,7 @@ authRouter.post("/verify", async (req, res) => {
   }
 });
 
-authRouter.get("/userdetail/token", validTokenUserNumber, async (req, res) => {
-  try {
-    const userdetail = await UserDetails.findOne({ phoneNumberId: req.user });
-    if (!userdetail) {
-      return res.status(400).json(formatError("No UserDetails Exists"));
-    }
-    const token = jwt.sign(
-      { id: userdetail._id, role: userdetail.role },
-      "passwordKey"
-    );
-
-    res.status(200).json(formatResponse(token, "User details Token"));
-  } catch (error) {
-    res.status(500).json(formatError(error.message));
-  }
-});
-
-authRouter.post("/tokenIsValid", validTokenUserNumber, async (req, res) => {
+const validTokenCheck = errorHandler(async (req, res) => {
   try {
     const id = req.user;
     const token = req.token;
@@ -181,15 +154,50 @@ authRouter.post("/tokenIsValid", validTokenUserNumber, async (req, res) => {
   }
 });
 
-export { authRouter };
+const updateUserType = errorHandler(async (req, res) => {
+  try {
+    const { role } = req.body;
 
-// authRouter.get("/username", async (req, res) => {
-//   const allUserName = await UserNumber.find().distinct("userName");
-//   res.status(200).json({ test: allUserName });
-// });
+    const existingUser = await UserNumber.findById(req.user);
+    if (existingUser.role) {
+      return res
+        .status(200)
+        .json(formatResponse(null, "User role already assigned "));
+    }
 
-//Check if userName already exists
-// const existingUserName = await UserNumber.findOne({ userName });
-// if (existingUserName) {
-//   return res.status(400).json({ message: "Choose another UserName!!!" });
-// }
+    if (!Roles.includes(role)) {
+      return res.status(400).json({ error: "Invalid role specified" });
+    }
+
+    const updatedUser = await UserNumber.findByIdAndUpdate(
+      req.user,
+      { role },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json(formatError("User not found"));
+    }
+
+    const payload = { id: updatedUser.id };
+    const token = generateToken(payload, process.env.SECRET_KEY);
+
+    res
+      .status(200)
+      .json(formatResponse(token, "User role updated successfully"));
+  } catch (error) {
+    res.status(500).json(formatError(error.message));
+  }
+});
+
+export {
+  createUserDetails,
+  LoginUser,
+  verifyUser,
+  validTokenCheck,
+  errorHandler,
+  updateUserType,
+};

@@ -4,7 +4,7 @@ import {
   Community,
   validateCommunity,
 } from "../../models/userModels/community.js";
-import { validTokenUserNumber } from "../../middleware/auth.js";
+import { validTokenUserNumber } from "../../middleware/auth.middleware.js";
 import { formatError, formatResponse } from "../../utils/response.js";
 
 const communityRouter = express.Router();

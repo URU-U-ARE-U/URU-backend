@@ -1,13 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
-import { authRouter } from "./src/routes/auth/auth.js";
+import { authRouter } from "./src/routes/auth/auth.routes.js";
 import { userDetailsRouter } from "./src/routes/userRoutes/userDetails.js";
 import { studentRouter } from "./src/routes/userRoutes/student.js";
 import { investorRouter } from "./src/routes/userRoutes/investor.js";
 import { wantrepreneurRouter } from "./src/routes/userRoutes/wantrepreneur.js";
-import projectRouter from "./src/routes/projects/project.js";
-import { adminRouter } from "./src/routes/userRoutes/admin.js";
+import projectRouter from "./src/routes/projects/project.user.routes.js";
+import { adminRouter } from "./src/routes/auth/admin.auth.routes.js";
 import communityRouter from "./src/routes/userRoutes/community.js";
+import resourcesRouter from "./src/routes/Resources/resources.routes.js";
+import adminprojectRouter from "./src/routes/projects/project.admin.routes.js";
 
 const app = express();
 
@@ -30,7 +32,9 @@ app.use(investorRouter); // Investor routes
 app.use(wantrepreneurRouter); // Wantrepreneur routes
 app.use(communityRouter);
 app.use(projectRouter); // Project routes
+app.use(adminprojectRouter);
 app.use(adminRouter);
+app.use("/resources", resourcesRouter);
 
 // Start the HTTP server
 app.listen(port, () => console.log(`Server listening on port ${port}`));

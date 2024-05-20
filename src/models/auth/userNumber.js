@@ -1,6 +1,8 @@
 import Joi from "joi";
 import mongoose from "mongoose";
 
+const Roles = ["Student", "Wantrepreneur", "Investor"];
+
 const userSchema = new mongoose.Schema({
   phone: {
     type: String,
@@ -23,6 +25,10 @@ const userSchema = new mongoose.Schema({
       },
       message: (props) => `${props.value} is not a valid email address!`,
     },
+  },
+  role: {
+    type: String,
+    enum: Roles,
   },
 
   otp: {
@@ -47,4 +53,4 @@ function validateUserNumber(userNumber) {
   return schema.validate(userNumber);
 }
 
-export { UserNumber, validateUserNumber };
+export { UserNumber, validateUserNumber, Roles };

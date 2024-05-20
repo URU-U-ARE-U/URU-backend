@@ -36,7 +36,7 @@ const validTokenAdmin = async (req, res, next) => {
     if (!token) {
       return res.status(401).json(formatError("Unauthorized"));
     }
-    const verifyToken = jwt.verify(token, "passwordKey");
+    const verifyToken = jwt.verify(token, process.env.SECRET_KEY);
     if (!verifyToken)
       return res.status(401).json(formatError("Invalid Json Token"));
     const userNumber = await Admin.findById(verifyToken.id);

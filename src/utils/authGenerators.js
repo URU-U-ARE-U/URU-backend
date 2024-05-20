@@ -1,6 +1,7 @@
 import otpGenerator from "otp-generator";
 import twilio from "twilio";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -40,9 +41,14 @@ function generateOtpExiry() {
   return new Date(Date.now() + 30 * 60 * 1000);
 }
 
+const generateToken = (payload, secretKey, options = {}) => {
+  return jwt.sign(payload, secretKey, options);
+};
+
 export {
   sendOtpViaTwilio,
   generateOtp,
   generateOtpExiry,
   isValidIndianPhoneNumber,
+  generateToken,
 };

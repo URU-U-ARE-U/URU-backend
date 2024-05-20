@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const projectRequestSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "UserDetails",
+    ref: "UserNumber",
   },
   projectId: {
     type: mongoose.Schema.Types.ObjectId,

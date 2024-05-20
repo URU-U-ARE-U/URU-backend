@@ -1,5 +1,5 @@
 import express from "express";
-import { validTokenUserNumber } from "../../middleware/auth.js";
+import { validTokenUserNumber } from "../../middleware/auth.middleware.js";
 import {
   UserDetails,
   validateUserDetails,

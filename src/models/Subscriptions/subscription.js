@@ -13,6 +13,10 @@ const subscriptionSchema = new mongoose.Schema({
     required: true,
     default: "Free",
   },
+  projectIntrest: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);
