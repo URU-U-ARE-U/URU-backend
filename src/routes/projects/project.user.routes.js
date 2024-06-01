@@ -10,6 +10,7 @@ import {
   deleteProjectRequest,
   deleteProjectWithAllRequest,
   repostProject,
+  getallProjects,
 } from "../../controllers/project.user.controllers.js";
 
 const projectRouter = express.Router();
@@ -27,6 +28,9 @@ projectRouter.route("/project").post(validTokenUserNumber, createProject);
 projectRouter
   .route("/project/:projectId")
   .put(validTokenUserNumber, updateProject);
+
+//get all projects to display it
+projectRouter.route("/getProjects").get(getallProjects);
 
 // Express interest in a project
 projectRouter

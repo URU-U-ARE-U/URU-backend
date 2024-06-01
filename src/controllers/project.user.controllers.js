@@ -259,6 +259,42 @@ const repostProject = errorHandler(async (req, res) => {
   }
 });
 
+const getallProjects = errorHandler(async (req, res) => {
+  try {
+    const projects = await Projects.aggregate([
+      {
+        $match: {},
+      },
+      {
+        $lookup: {
+          from: "usernumbers",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $project: {
+          _id: "$_id",
+          name: "$title",
+          publisherName: "$user.email",
+          investmentRange: "$investmentRange",
+          description: "description",
+          sdg: "$sdg",
+          trl: "$trl",
+          image: { $arrayElemAt: ["$images", 0] },
+        },
+      },
+    ]);
+    res.status(200).json(formatResponse(projects));
+  } catch (error) {
+    res.status(500).json(formatError(error.message));
+  }
+});
+
 export {
   createProject,
   updateProject,
@@ -269,4 +305,5 @@ export {
   deleteProjectRequest,
   deleteProjectWithAllRequest,
   repostProject,
+  getallProjects,
 };
