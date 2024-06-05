@@ -26,10 +26,10 @@ const SDGS = [
   ];
 
 const mentorSchema = new mongoose.Schema({
-    // userId: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "UserDetails",
-    //   },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserDetails",
+      },
     username:{
         type:String,
         unique:true,
