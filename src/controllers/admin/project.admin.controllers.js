@@ -195,6 +195,7 @@ const deleteReportedProject = errorHandler(async (req, res) => {
     await ProjectRequest.deleteMany({
       projectId: req.params.projectId,
     });
+    
     res.status(200).json(formatResponse(null, "Project deleted successfully"));
   } catch (error) {
     res.status(500).json(formatError(error.message));

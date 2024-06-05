@@ -10,6 +10,7 @@ import { adminRouter } from "./src/routes/auth/admin.auth.routes.js";
 import communityRouter from "./src/routes/userRoutes/community.js";
 import resourcesRouter from "./src/routes/Resources/resources.routes.js";
 import adminprojectRouter from "./src/routes/projects/project.admin.routes.js";
+import { mentorRouter } from "./src/routes/userRoutes/mentor.js";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use(projectRouter); // Project routes
 app.use(adminprojectRouter);
 app.use(adminRouter);
 app.use("/resources", resourcesRouter);
+app.use(mentorRouter);
 
 // Start the HTTP server
 app.listen(port, () => console.log(`Server listening on port ${port}`));
