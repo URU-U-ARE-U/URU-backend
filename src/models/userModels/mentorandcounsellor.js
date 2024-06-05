@@ -2,7 +2,7 @@ import mongoose,{Schema} from "mongoose";
 import Joi from "joi";
 
 
-const typeUser = ["National","International"];
+const userType = ["National","International"];
 
 
 const SDGS = [
@@ -25,11 +25,16 @@ const SDGS = [
     "Group17",
   ];
 
-const mentorSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "UserDetails",
-      },
+const roleType = ["counsellor","mentor"];
+const payType = ["paid","free"];
+const statusType = ["tick","pending"]
+
+const mentorAndCounsellorSchema = new mongoose.Schema({
+   role:{
+    type:String,
+    enum:roleType,
+    required:true
+   },
     username:{
         type:String,
         unique:true,
@@ -45,7 +50,7 @@ const mentorSchema = new mongoose.Schema({
       },
     nationality:{
         type:String,
-        enum:typeUser,
+        enum:userType,
         required:true
     },
     district:{
@@ -94,16 +99,27 @@ const mentorSchema = new mongoose.Schema({
     links:{
         type:String,
         required:true
+    },
+    payment:{
+        type:String,
+        enum:payType,
+        required:true
+    },
+    status:{
+        type:String,
+        enum:statusType,
+        required:true
     }
 
 })
 
 function validateMentor(mentor){
     const schema = Joi.object({
+        role: Joi.string().valid(...roleType), 
         username: Joi.string().required(),
         image: Joi.string().allow("").optional(),
         philosophy: Joi.string().required().max(150),
-        nationality: Joi.string().valid(...typeUser).required(),
+        nationality: Joi.string().valid(...userType).required(),
         district: Joi.string().lowercase().required(),
         city: Joi.string().lowercase().required(),
         state: Joi.string().lowercase().required(),
@@ -116,10 +132,13 @@ function validateMentor(mentor){
         sdg: Joi.string().valid(...SDGS).required(),
         description: Joi.string().required().max(250),
         links: Joi.string().required(),
+        payment: Joi.string().valid(...payType).required(),
+        status:Joi.string().valid(...statusType).required()
+
       });
       return schema.validate(mentor);
 }
 
-const Mentor = mongoose.model("Mentor",mentorSchema)
+const MentorAndCounsellor = mongoose.model("MentorAndCounsellor",mentorAndCounsellorSchema)
 
-export {Mentor,validateMentor};
+export {MentorAndCounsellor,validateMentor};
